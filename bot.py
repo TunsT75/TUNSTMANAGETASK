@@ -1,8 +1,10 @@
 import os
 import re
 import datetime
+import threading
 import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+from flask import Flask
 from pytz import timezone
 
 from config import BOT_TOKEN, TIMEZONE, EXCEL_PATH
@@ -14,6 +16,20 @@ from database import (
 from excel_exporter import export_to_excel, sync_all_exports
 from scheduler import start_scheduler
 
+# -------------------------------------------------------------
+# FLASK HEALTH CHECK SERVER (Required for Render Web Service Free Tier)
+# -------------------------------------------------------------
+app = Flask(__name__)
+
+@app.route('/')
+def health_check():
+    return "⚡ Task Manager & Reminder Bot is running 24/7 🚀", 200
+
+def run_health_server():
+    port = int(os.getenv("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
+
+# Initialize Bot safely
 token_to_use = BOT_TOKEN if (BOT_TOKEN and ":" in BOT_TOKEN and BOT_TOKEN != "YOUR_TELEGRAM_BOT_TOKEN_HERE") else "123456789:AAEFakeTokenForImportTestingOnly"
 bot = telebot.TeleBot(token_to_use)
 
@@ -95,7 +111,6 @@ def handle_checklist_command(message):
     markup = InlineKeyboardMarkup()
 
     for t in daily_tasks:
-        # t: id, title, category, priority, status, due_time, repeat_type, completed_at
         t_id, title, category, priority, status, due_time, repeat_type, completed_at = t
         chk = "☑️" if status == "Hoàn thành" else "☐"
         type_str = " 🔄 (Hàng ngày)" if repeat_type == "daily" else ""
@@ -467,7 +482,11 @@ def sqlite3_update_due(task_id, new_due_time):
     conn.close()
 
 if __name__ == "__main__":
-    print("Starting Task Reminder Bot Pro with Daily Checklist...")
+    print("Starting Task Reminder Bot Pro with Flask Health Server & Daily Checklist...")
+    
+    # 1. Start Flask Health Server Thread (Fix for Render Web Service Free Tier)
+    threading.Thread(target=run_health_server, daemon=True).start()
+    
     if BOT_TOKEN == "YOUR_TELEGRAM_BOT_TOKEN_HERE" or not BOT_TOKEN:
         print("⚠️ Warning: Please set BOT_TOKEN in .env file before running!")
     else:
@@ -485,7 +504,7 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"Notice setting bot commands: {e}")
 
+        # 2. Start Scheduler
         start_scheduler(bot)
         print("Scheduler started. Bot is polling...")
         bot.infinity_polling()
-
