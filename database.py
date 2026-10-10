@@ -7,11 +7,32 @@ def get_now():
     tz = timezone(TIMEZONE)
     return datetime.datetime.now(tz)
 
+DEFAULT_DAILY_TASKS = [
+    ('Đăng video kênh TikTok nam', 'TikTok', '08:30:00', 'Cao'),
+    ('Đăng video kênh TikTok nữ', 'TikTok', '08:30:00', 'Cao'),
+    ('Check kênh TikTok Ốp', 'TikTok', '08:30:00', 'Cao'),
+    ('Đăng video kênh TikTok Tạp hóa', 'TikTok', '09:30:00', 'Cao'),
+    ('Đăng Video/bài Page Hoang Anh', 'Fanpage', '10:00:00', 'Cao'),
+    ('Đăng Video/bài Page TunsT', 'Fanpage', '10:00:00', 'Cao'),
+    ('Đăng Video/bài Page TunsT3k2', 'Fanpage', '10:00:00', 'Cao'),
+    ('Đăng Video/bài FaceBook TunsT Tran', 'Facebook', '10:00:00', 'Trung bình'),
+    ('Đăng video Shopee', 'Shopee', '11:00:00', 'Trung bình'),
+    ('Đăng video kênh TikTok nam', 'TikTok', '20:00:00', 'Cao'),
+    ('Đăng video kênh TikTok nữ', 'TikTok', '20:00:00', 'Cao'),
+    ('Đăng video kênh TikTok Tạp hóa', 'TikTok', '20:00:00', 'Cao'),
+    ('Đăng Video/bài Page Hoang Anh', 'Fanpage', '20:00:00', 'Cao'),
+    ('Đăng Video/bài Page TunsT', 'Fanpage', '20:00:00', 'Cao'),
+    ('Đăng Video/bài Page TunsT3k2', 'Fanpage', '20:00:00', 'Cao'),
+    ('Đăng Video/bài FaceBook TunsT Tran', 'Facebook', '20:00:00', 'Trung bình'),
+    ('Làm video Nam Nữ', 'Production', '21:00:00', 'Trung bình'),
+    ('Đăng video Shopee', 'Shopee', '22:00:00', 'Trung bình')
+]
+
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
-    # Table 1: Tasks (Công việc cần làm & Lịch nhắc)
+    # Table 1: Tasks
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,7 +49,7 @@ def init_db():
         )
     ''')
 
-    # Table 2: Work Logs (Nhật ký các việc đã làm)
+    # Table 2: Work Logs
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS work_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,6 +65,23 @@ def init_db():
     ''')
 
     conn.commit()
+
+    # Auto seed 18 daily tasks if database is empty (e.g. fresh deploy on Cloud)
+    cursor.execute("SELECT COUNT(*) FROM tasks")
+    count = cursor.fetchone()[0]
+    if count == 0:
+        now = get_now()
+        today_str = now.strftime("%Y-%m-%d")
+        created_str = now.strftime("%Y-%m-%d %H:%M:%S")
+        for item in DEFAULT_DAILY_TASKS:
+            title, cat, time_str, prio = item
+            due_str = f"{today_str} {time_str}"
+            cursor.execute('''
+                INSERT INTO tasks (title, category, priority, status, due_time, repeat_type, created_at)
+                VALUES (?, ?, ?, 'Chờ làm', ?, 'daily', ?)
+            ''', (title, cat, prio, due_str, created_str))
+        conn.commit()
+
     conn.close()
 
 def add_task(title, description="", category="Chung", priority="Trung bình", due_time=None, user_id=None, repeat_type="none"):
@@ -62,7 +100,6 @@ def add_task(title, description="", category="Chung", priority="Trung bình", du
     return task_id
 
 def log_work(content, category="Chung", task_id=None, user_id=None):
-    """Ghi chép công việc đã thực hiện"""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     now = get_now()
@@ -110,7 +147,12 @@ def mark_task_completed(task_id, auto_log=True, user_id=None):
     # Recurring daily task logic
     if repeat_type == 'daily' and due_time:
         try:
-            dt_obj = datetime.datetime.strptime(due_time, "%Y-%m-%d %H:%M:%S")
+            # Handle potential variation in due_time format
+            if len(due_time) == 19:
+                dt_obj = datetime.datetime.strptime(due_time, "%Y-%m-%d %H:%M:%S")
+            else:
+                parts = due_time.split(" ")
+                dt_obj = datetime.datetime.strptime(f"{parts[0]} {parts[1]}", "%Y-%m-%d %H:%M:%S")
             next_due = (dt_obj + datetime.timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
             cursor.execute('''
                 INSERT INTO tasks (title, category, priority, status, due_time, repeat_type, created_at, user_id)
@@ -132,15 +174,10 @@ def get_daily_checklist(user_id=None, date_str=None):
     query = '''
         SELECT id, title, category, priority, status, due_time, repeat_type, completed_at
         FROM tasks
-        WHERE (due_time LIKE ? OR repeat_type = 'daily' OR (completed_at LIKE ?))
+        WHERE (due_time LIKE ? OR repeat_type = 'daily' OR completed_at LIKE ?)
+        ORDER BY status ASC, due_time ASC, id DESC
     '''
-    params = [f"{date_str}%", f"{date_str}%"]
-    if user_id:
-        query += " AND (user_id = ? OR user_id IS NULL)"
-        params.append(user_id)
-    query += " ORDER BY status ASC, due_time ASC, id DESC"
-    
-    cursor.execute(query, params)
+    cursor.execute(query, (f"{date_str}%", f"{date_str}%"))
     rows = cursor.fetchall()
     conn.close()
     return rows
@@ -164,9 +201,6 @@ def get_pending_tasks(user_id=None, category=None):
     cursor = conn.cursor()
     query = "SELECT id, title, description, category, priority, due_time, created_at, repeat_type FROM tasks WHERE status != 'Hoàn thành' AND status != 'Đã hủy'"
     params = []
-    if user_id:
-        query += " AND (user_id = ? OR user_id IS NULL)"
-        params.append(user_id)
     if category and category != 'Tất cả':
         query += " AND category = ?"
         params.append(category)
@@ -180,13 +214,8 @@ def get_today_work_logs(user_id=None):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     today_str = get_now().strftime("%Y-%m-%d")
-    query = "SELECT id, content, log_time, category FROM work_logs WHERE log_date = ?"
-    params = [today_str]
-    if user_id:
-        query += " AND (user_id = ? OR user_id IS NULL)"
-        params.append(user_id)
-    query += " ORDER BY log_time ASC"
-    cursor.execute(query, params)
+    query = "SELECT id, content, log_time, category FROM work_logs WHERE log_date = ? ORDER BY log_time ASC"
+    cursor.execute(query, (today_str,))
     rows = cursor.fetchall()
     conn.close()
     return rows
@@ -230,7 +259,6 @@ def get_all_work_logs():
     return rows
 
 def get_due_tasks_to_remind():
-    """Lấy các công việc ĐÚNG GIỜ để nhắc nhở lần 2"""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     now_str = get_now().strftime("%Y-%m-%d %H:%M")
@@ -244,7 +272,6 @@ def get_due_tasks_to_remind():
     return rows
 
 def get_tasks_for_pre_reminder_15m():
-    """Lấy các công việc TRƯỚC 15 PHÚT để nhắc nhở lần 1"""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     in_15m = (get_now() + datetime.timedelta(minutes=15)).strftime("%Y-%m-%d %H:%M")
