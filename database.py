@@ -28,8 +28,11 @@ DEFAULT_DAILY_TASKS = [
     ('Đăng video Shopee', 'Shopee', '22:00:00', 'Trung bình')
 ]
 
+def get_db_connection():
+    return sqlite3.connect(DB_PATH, timeout=30)
+
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
     
     # Table 1: Tasks
@@ -85,7 +88,7 @@ def init_db():
     conn.close()
 
 def add_task(title, description="", category="Chung", priority="Trung bình", due_time=None, user_id=None, repeat_type="none"):
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
     now_str = get_now().strftime("%Y-%m-%d %H:%M:%S")
     
@@ -100,7 +103,7 @@ def add_task(title, description="", category="Chung", priority="Trung bình", du
     return task_id
 
 def log_work(content, category="Chung", task_id=None, user_id=None):
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
     now = get_now()
     log_date = now.strftime("%Y-%m-%d")
@@ -118,7 +121,7 @@ def log_work(content, category="Chung", task_id=None, user_id=None):
     return log_id
 
 def mark_task_completed(task_id, auto_log=True, user_id=None):
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
     now = get_now()
     now_str = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -166,7 +169,7 @@ def mark_task_completed(task_id, auto_log=True, user_id=None):
     return True
 
 def get_daily_checklist(user_id=None, date_str=None):
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
     if not date_str:
         date_str = get_now().strftime("%Y-%m-%d")
@@ -183,21 +186,21 @@ def get_daily_checklist(user_id=None, date_str=None):
     return rows
 
 def update_task_status(task_id, status):
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("UPDATE tasks SET status = ? WHERE id = ?", (status, task_id))
     conn.commit()
     conn.close()
 
 def delete_task(task_id):
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
     conn.commit()
     conn.close()
 
 def get_pending_tasks(user_id=None, category=None):
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
     query = "SELECT id, title, description, category, priority, due_time, created_at, repeat_type FROM tasks WHERE status != 'Hoàn thành' AND status != 'Đã hủy'"
     params = []
@@ -211,7 +214,7 @@ def get_pending_tasks(user_id=None, category=None):
     return rows
 
 def get_today_work_logs(user_id=None):
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
     today_str = get_now().strftime("%Y-%m-%d")
     query = "SELECT id, content, log_time, category FROM work_logs WHERE log_date = ? ORDER BY log_time ASC"
@@ -221,7 +224,7 @@ def get_today_work_logs(user_id=None):
     return rows
 
 def search_tasks_and_logs(keyword, user_id=None):
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
     kw = f"%{keyword}%"
     
@@ -243,7 +246,7 @@ def search_tasks_and_logs(keyword, user_id=None):
     return tasks, logs
 
 def get_all_tasks():
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT id, title, description, category, priority, status, due_time, created_at, completed_at, repeat_type FROM tasks ORDER BY id DESC")
     rows = cursor.fetchall()
@@ -251,7 +254,7 @@ def get_all_tasks():
     return rows
 
 def get_all_work_logs():
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT id, task_id, category, content, log_date, log_time, created_at FROM work_logs ORDER BY id DESC")
     rows = cursor.fetchall()
@@ -259,7 +262,7 @@ def get_all_work_logs():
     return rows
 
 def get_due_tasks_to_remind():
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
     now_str = get_now().strftime("%Y-%m-%d %H:%M")
     cursor.execute('''
@@ -272,7 +275,7 @@ def get_due_tasks_to_remind():
     return rows
 
 def get_tasks_for_pre_reminder_15m():
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
     in_15m = (get_now() + datetime.timedelta(minutes=15)).strftime("%Y-%m-%d %H:%M")
     cursor.execute('''

@@ -477,15 +477,17 @@ def handle_callback_query(call):
         bot.edit_message_text(f"🗑️ *Đã xóa công việc #{t_id} khỏi hệ thống.*", chat_id, call.message.message_id, parse_mode="Markdown")
 
 def sqlite3_update_due(task_id, new_due_time):
-    import sqlite3
-    from config import DB_PATH
-    conn = sqlite3.connect(DB_PATH)
+    from database import get_db_connection
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("UPDATE tasks SET due_time = ?, status = 'Chờ làm' WHERE id = ?", (new_due_time, task_id))
     conn.commit()
     conn.close()
 
 if __name__ == "__main__":
+    import time
+    import traceback
+
     print("Starting Task Reminder Bot Pro with Flask Health Server & Daily Checklist...")
     
     # 1. Start Flask Health Server Thread (Fix for Render Web Service Free Tier)
@@ -510,5 +512,13 @@ if __name__ == "__main__":
 
         # 2. Start Scheduler
         start_scheduler(bot)
-        print("Scheduler started. Bot is polling...")
-        bot.infinity_polling()
+        print("Scheduler started. Bot is polling with auto-reconnect...")
+        
+        while True:
+            try:
+                bot.infinity_polling(timeout=20, long_polling_timeout=20)
+            except Exception as e:
+                now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                print(f"[{now_str}] ⚠️ Polling connection error: {e}. Reconnecting in 5 seconds...")
+                traceback.print_exc()
+                time.sleep(5)
