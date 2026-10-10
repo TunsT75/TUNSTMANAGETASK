@@ -72,10 +72,12 @@ Hệ thống được thiết kế để giải quyết triệt để vấn đ�
 - [scheduler.py](scheduler.py): Bộ hẹn giờ gửi thông báo 2 lần.
 - [web_dashboard.py](web_dashboard.py): Giao diện Web quản lý bằng trình duyệt.
 - [.env](.env): Lưu cấu hình `BOT_TOKEN`, `GOOGLE_SCRIPT_URL`, `TIMEZONE`.
-- [Procfile](Procfile): Cấu hình Web Service cho Render.com.
-- [render.yaml](render.yaml): Blueprint cấu hình tự động Web Service trên Render.com.
-- [requirements.txt](requirements.txt): Thư viện Python phụ thuộc (đã bổ sung `requests` và `gunicorn`).
+- [Dockerfile](Dockerfile): File đóng gói Docker chuẩn hóa để chạy trên Koyeb, Railway, Fly.io hoặc VPS.
+- [Procfile](Procfile): Cấu hình Web Service cho Render/Railway.
+- [render.yaml](render.yaml): Blueprint cấu hình tự động trên Render.com.
+- [requirements.txt](requirements.txt): Thư viện Python phụ thuộc.
 - [Quan_Ly_Cong_Viec.xlsx](Quan_Ly_Cong_Viec.xlsx): File Excel tổng hợp.
+
 
 ---
 
