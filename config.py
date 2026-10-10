@@ -8,6 +8,8 @@ load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN", "YOUR_TELEGRAM_BOT_TOKEN_HERE")
 ALLOWED_USER_IDS = os.getenv("ALLOWED_USER_IDS", "")  # Empty means all users allowed, or comma-separated list of IDs
 GOOGLE_SCRIPT_URL = os.getenv("GOOGLE_SCRIPT_URL", "")
+GOOGLE_SHEET_ID = os.getenv("GOOGLE_SHEET_ID", "")
+
 
 
 # Timezone

@@ -27,7 +27,11 @@ def health_check():
 
 def run_health_server():
     port = int(os.getenv("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    try:
+        app.run(host="0.0.0.0", port=port, use_reloader=False)
+    except Exception as e:
+        print(f"Health server error: {e}")
+
 
 # Initialize Bot safely
 token_to_use = BOT_TOKEN if (BOT_TOKEN and ":" in BOT_TOKEN and BOT_TOKEN != "YOUR_TELEGRAM_BOT_TOKEN_HERE") else "123456789:AAEFakeTokenForImportTestingOnly"

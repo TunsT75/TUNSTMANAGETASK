@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: task-reminder-bot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    healthCheckPath: /
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: TIMEZONE
+        value: Asia/Ho_Chi_Minh
+      - key: GOOGLE_SCRIPT_URL
+        sync: false
+

@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager & Work Log Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0F172A;
+            --card-bg: #1E293B;
+            --card-border: #334155;
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            --accent-blue: #3B82F6;
+            --accent-green: #10B981;
+            --accent-yellow: #F59E0B;
+            --accent-red: #EF4444;
+            --accent-purple: #8B5CF6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header-title h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #60A5FA, #A78BFA);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-title p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 0.2rem;
+        }
+
+        .btn-excel {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+            padding: 0.75rem 1.25rem;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .btn-excel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 1.5rem;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .stat-val {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-top: 0.25rem;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .icon-box {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+        }
+
+        /* Section Layout */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 2rem;
+        }
+
+        @media (max-width: 992px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: #0F172A;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: var(--accent-blue);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-submit:hover {
+            background: #2563EB;
+        }
+
+        /* Task Items */
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .task-item {
+            background: #0F172A;
+            border: 1px solid var(--card-border);
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .task-info h4 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .task-meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .badge {
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+
+        }
+
+        .badge-cao { background: rgba(239, 68, 68, 0.2); color: #FCA5A5; }
+        .badge-tb { background: rgba(245, 158, 11, 0.2); color: #FDE047; }
+        .badge-thap { background: rgba(59, 130, 246, 0.2); color: #93C5FD; }
+
+        .btn-done {
+            background: rgba(16, 185, 129, 0.2);
+            color: #6EE7B7;
+            border: 1px solid #10B981;
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-done:hover {
+            background: #10B981;
+            color: white;
+        }
+
+        /* Log items */
+        .log-item {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+
+        .log-item:last-child {
+            border-bottom: none;
+        }
+
+        .log-time {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-title">
+                <h1>⚡ Task & Work Log Dashboard</h1>
+                <p>Hệ thống Quản lý công việc & Ghi nhận nhật ký thông minh</p>
+            </div>
+            <a href="/download-excel" class="btn-excel">
+                📊 Tải File Excel (.xlsx)
+            </a>
+        </header>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div>
+                    <div class="stat-label">TỔNG CÔNG VIỆC</div>
+                    <div class="stat-val" style="color: #60A5FA;">{{ total_tasks }}</div>
+                </div>
+                <div class="icon-box" style="background: rgba(96, 165, 250, 0.15); color: #60A5FA;">📋</div>
+            </div>
+
+            <div class="stat-card">
+                <div>
+                    <div class="stat-label">VIỆC CẦN LÀM</div>
+                    <div class="stat-val" style="color: #FBBF24;">{{ pending_tasks }}</div>
+                </div>
+                <div class="icon-box" style="background: rgba(251, 191, 36, 0.15); color: #FBBF24;">⏳</div>
+            </div>
+
+            <div class="stat-card">
+                <div>
+                    <div class="stat-label">ĐÃ HOÀN THÀNH</div>
+                    <div class="stat-val" style="color: #34D399;">{{ completed_tasks }}</div>
+                </div>
+                <div class="icon-box" style="background: rgba(52, 211, 153, 0.15); color: #34D399;">✅</div>
+            </div>
+
+            <div class="stat-card">
+                <div>
+                    <div class="stat-label">TỶ LỆ HOÀN THÀNH</div>
+                    <div class="stat-val" style="color: #A78BFA;">{{ completion_rate }}%</div>
+                </div>
+                <div class="icon-box" style="background: rgba(167, 139, 250, 0.15); color: #A78BFA;">🎯</div>
+            </div>
+        </div>
+
+        <!-- Content Grid -->
+        <div class="content-grid">
+            <!-- Left Column: Pending Tasks & Today Logs -->
+            <div>
+                <!-- Pending Tasks -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">📌 Danh sách công việc cần làm</div>
+                        <span style="color: var(--text-muted); font-size: 0.85rem;">{{ tasks|length }} việc</span>
+                    </div>
+
+                    <div class="task-list">
+                        {% if not tasks %}
+                            <p style="color: var(--text-muted); text-align: center; padding: 1.5rem 0;">🎉 Không có công việc nào tồn đọng!</p>
+                        {% endif %}
+
+                        {% for task in tasks %}
+                            <div class="task-item">
+                                <div class="task-info">
+                                    <h4>{{ task[1] }}</h4>
+                                    <div class="task-meta">
+                                        <span class="badge {% if task[3]=='Cao' %}badge-cao{% elif task[3]=='Trung bình' %}badge-tb{% else %}badge-thap{% endif %}">
+                                            {{ task[3] }}
+                                        </span>
+                                        <span>⏰ Hạn: {{ task[4] if task[4] else 'Không hẹn giờ' }}</span>
+                                    </div>
+                                </div>
+                                <form action="/api/complete-task/{{ task[0] }}" method="POST">
+                                    <button type="submit" class="btn-done">✅ Hoàn thành</button>
+                                </form>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Today Work Logs -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">📝 Nhật ký công việc hoàn thành hôm nay</div>
+                        <span style="color: var(--text-muted); font-size: 0.85rem;">{{ today_logs|length }} mục</span>
+                    </div>
+
+                    {% if not today_logs %}
+                        <p style="color: var(--text-muted); text-align: center; padding: 1rem 0;">Chưa ghi nhận nhật ký nào hôm nay.</p>
+                    {% endif %}
+
+                    {% for log in today_logs %}
+                        <div class="log-item">
+                            <div>🎯 <strong>{{ log[1] }}</strong></div>
+                            <div class="log-time">🕒 {{ log[2] }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Right Column: Quick Add Forms -->
+            <div>
+                <!-- Add Task Form -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">➕ Thêm việc cần làm</div>
+                    </div>
+                    <form action="/api/add-task" method="POST">
+                        <div class="form-group">
+                            <label>Tên công việc</label>
+                            <input type="text" name="title" class="form-control" placeholder="Ví dụ: Gọi cho khách hàng" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Ưu tiên</label>
+                            <select name="priority" class="form-control">
+                                <option value="Trung bình">🟡 Trung bình</option>
+                                <option value="Cao">🔴 Cao</option>
+                                <option value="Thấp">🔵 Thấp</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Hạn chót / Giờ nhắc (HH:MM)</label>
+                            <input type="text" name="due_time" class="form-control" placeholder="15:30 hoặc 2026-10-15 09:00">
+                        </div>
+                        <button type="submit" class="btn-submit">Lưu công việc</button>
+                    </form>
+                </div>
+
+                <!-- Quick Log Form -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">📝 Note việc vừa làm xong</div>
+                    </div>
+                    <form action="/api/log-work" method="POST">
+                        <div class="form-group">
+                            <label>Nội dung việc đã làm</label>
+                            <textarea name="content" class="form-control" rows="3" placeholder="Ví dụ: Đã gửi email xác nhận hợp đồng" required></textarea>
+                        </div>
+                        <button type="submit" class="btn-submit" style="background: var(--accent-green);">Ghi nhận Nhật ký</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
